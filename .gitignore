@@ -1,0 +1,38 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Docker
+*.tar
+docker-compose.override.yml
+
+# VS Code
+.vscode/
+
+# Mac & Linux
+.DS_Store
+.idea/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+crash.log
+terraform.tfvars
+
+# AWS credentials if ever saved locally
+*.pem
+
+# Python virtual environments
+venv/
+env/
+
+# GitHub Actions runtime files
+.github/*/temp/

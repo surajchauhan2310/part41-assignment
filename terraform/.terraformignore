@@ -1,0 +1,15 @@
+# Ignore Docker and Python app code
+/app/*
+/.github/*
+/*.md
+
+# Only keep Terraform modules and definitions
+*.zip
+*.tar
+*.tar.gz
+*.log
+*.env
+*.py
+*.pyc
+*.sh
+*.txt
