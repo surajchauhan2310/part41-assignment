@@ -29,8 +29,7 @@ jobs:
 
       - name: Create S3 Bucket for Terraform Backend
         run: |
-          RANDOM_INT=$(shuf -i 1000-9999 -n 1)
-          BUCKET_NAME="my-terraform-backend-bucket-suraj-${RANDOM_INT}"
+          BUCKET_NAME="terraform-backend-bucket-suraj2310"
           echo "BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
 
           if ! aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
