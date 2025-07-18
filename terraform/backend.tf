@@ -1,10 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "tfstate-suraj-chauhan-20250716"   # ✅ must match your S3 bucket
-    key            = "dev/terraform.tfstate"        # ✅ the file path in S3
+    bucket         = "my-terraform-backend-bucket-suraj2310"
+    key            = "state/terraform.tfstate"
     region         = "ap-south-1"
-    dynamodb_table = "terraform-locks"              # ✅ name of the lock table
+    dynamodb_table = "terraform-locks"
     encrypt        = true
-    # use_lockfile   = true 
   }
 }
