@@ -35,6 +35,20 @@ jobs:
             --attribute-definitions AttributeName=LockID,AttributeType=S \
             --key-schema AttributeName=LockID,KeyType=HASH \
             --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
+      
+      - name: Wait for DynamoDB Table to become ACTIVE
+        run: |
+          echo "Waiting for terraform-locks table to become ACTIVE..."
+          while true; do
+            STATUS=$(aws dynamodb describe-table --table-name terraform-locks --query "Table.TableStatus" --output text)
+            echo "Current status: $STATUS"
+            if [ "$STATUS" == "ACTIVE" ]; then
+              echo "DynamoDB table is ACTIVE."
+              break
+            fi
+            echo "Waiting 5 seconds..."
+            sleep 5
+          done
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
