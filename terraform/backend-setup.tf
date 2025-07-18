@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "tfstate" {
-  bucket = "tfstate-suraj2310-20250716" # ✅ Ensure it's globally unique
+  bucket = "tfstate-heisenbergx2310-20250716" # ✅ Ensure it's globally unique
   force_destroy = true
 
   versioning {
