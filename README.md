@@ -197,15 +197,13 @@ Now both `https://23surajrc.com` and `https://www.23surajrc.com` should work sec
 | ECS (Fargate) Deployment    | ✅   |
 | Terraform Infra Provision   | ✅   |
 | GitHub Actions CI/CD        | ✅   |
-| Domain Mapping via Route 53 | ✅   |
-| SSL Certificate via ACM     | ✅   |
+
 
 ---
 
 ## \:memo: Notes
 
 - Make sure ports 80 and 443 are open in the ALB security group.
-- ACM certificates must be in **us-east-1** for CloudFront, but in your region (e.g., ap-south-1) for ALB.
 - Use `terraform destroy` to tear down the infra when done.
 
 ---
