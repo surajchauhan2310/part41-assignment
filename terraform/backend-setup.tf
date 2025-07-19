@@ -1,4 +1,4 @@
-resource "aws_s3_bucket" "tfstate" {
+#   resource "aws_s3_bucket" "tfstate" {
 #   bucket = "terraform-backend-bucket-suraj2310" # 
 #   force_destroy = true
 
