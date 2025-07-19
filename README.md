@@ -1,34 +1,43 @@
+---
+
+```md
 # Flask App Deployment on AWS with Terraform, GitHub Actions, and Custom Domain
 
 This project demonstrates how to deploy a Flask web application using Docker, ECS (Fargate), and Terraform. It also integrates GitHub Actions for CI/CD and maps a custom domain (`23surajrc.com`) using Route 53, ACM (SSL), and Namecheap.
 
 ---
 
-## \:rocket: Project Structure
+## 🚀 Project Structure
 
 ```
+
 .
 ├── app/                          # Flask app folder
 │   ├── Dockerfile
 │   └── app.py
-├── terraform/                   # Terraform infrastructure setup
-│   ├── main.tf
-│   ├── vpc.tf
-│   ├── ecs.tf
-│   ├── alb.tf
-│   ├── iam.tf
-│   ├── variables.tf
-│   ├── outputs.tf
-│   └── backend-setup.tf
+├── terraform/
+│   ├── app-infra/                # Terraform infrastructure setup
+│   │   ├── main.tf
+│   │   ├── vpc.tf
+│   │   ├── ecs.tf
+│   │   ├── alb.tf
+│   │   ├── iam.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   └── provider.tf
+│   ├── backend-setup/           # (Commented) Optional Terraform backend
+│   │   └── backend-setup.tf
+│   └── backend.tf               # (Commented) S3 + DynamoDB backend config
 ├── .github/workflows/
 │   └── deploy.yml               # GitHub Actions CI/CD pipeline
 ├── README.md
 └── .gitignore
-```
+
+````
 
 ---
 
-## \:snake: Flask App (app/app.py)
+## 🐍 Flask App (`app/app.py`)
 
 ```python
 from flask import Flask
@@ -40,9 +49,11 @@ def home():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
-```
+````
 
-## \:whale: Dockerfile
+---
+
+## 🐳 Dockerfile
 
 ```Dockerfile
 FROM python:3.9-slim
@@ -54,70 +65,29 @@ CMD ["python", "app.py"]
 
 ---
 
-## \:construction_worker: Terraform Infrastructure
+## 🛠️ Terraform Infrastructure (Basic Setup)
 
-### 1. Initialize Backend (S3 + DynamoDB for tfstate)
-
-```hcl
-# backend-setup.tf
-resource "aws_s3_bucket" "tfstate" {
-  bucket = "tfstate-suraj2310-20250716"
-  versioning { enabled = true }
-  force_destroy = true
-  tags = { Name = "Terraform State Bucket", Environment = "dev" }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
-  bucket = aws_s3_bucket.tfstate.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_dynamodb_table" "tf_locks" {
-  name         = "terraform-locks"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-  tags = {
-    Name = "Terraform Locks Table"
-    Environment = "dev"
-  }
-}
-```
-
-Then run:
+Navigate to the `terraform/app-infra` directory and run:
 
 ```bash
-terraform init -backend-config="bucket=tfstate-suraj2310-20250716" \
-               -backend-config="key=terraform.tfstate" \
-               -backend-config="region=ap-south-1" \
-               -backend-config="dynamodb_table=terraform-locks"
-```
-
-### 2. Provision the Infrastructure
-
-```bash
-terraform plan
+terraform init
 terraform apply
 ```
 
-This will:
+This will create:
 
-- Create a VPC with public and private subnets
-- Create an ECS Cluster with a Fargate service
-- Create an ALB to expose the service
+* A VPC with public/private subnets
+* IAM roles and ECS cluster
+* Fargate service to run the Flask container
+* Application Load Balancer (ALB) for routing
+
+> ℹ️ **Note**: Files like `backend.tf` and `backend-setup.tf` are included but commented out. These are for setting up a remote backend (S3 + DynamoDB) and can be used in future by uncommenting and running `terraform init` with appropriate backend configuration.
 
 ---
 
-## \:octocat: GitHub Actions CI/CD
+## 🐙 GitHub Actions CI/CD
 
-Create `.github/workflows/deploy.yml`:
+`.github/workflows/deploy.yml` handles CI/CD with every push to `main`:
 
 ```yaml
 name: Deploy Flask App to ECS
@@ -142,72 +112,78 @@ jobs:
 
       - name: Build & Push Docker image to ECR
         run: |
-          # Replace with your own logic for ECR login & push
-          echo "Build and push steps here"
+          echo "Build and push image logic here"
 
       - name: Terraform Apply
         run: |
-          cd terraform
+          cd terraform/app-infra
           terraform init
           terraform apply -auto-approve
 ```
 
 ---
 
-## \:link: Mapping Custom Domain (23surajrc.com) with SSL
+## 🔗 Custom Domain & SSL (`23surajrc.com`)
 
 ### 1. Route 53 Hosted Zone
 
-- Create a hosted zone for `23surajrc.com` in Route 53.
-- Note the NS records and update them in **Namecheap** under **Domain > Advanced DNS**.
+* Create hosted zone for `23surajrc.com` in Route 53
+* Update **NS records** in Namecheap under DNS settings
 
-### 2. ACM (SSL Certificate)
+### 2. ACM Certificate (SSL)
 
-- Request a certificate for:
+* Request certificate for:
 
-  - `23surajrc.com`
-  - `www.23surajrc.com`
+  * `23surajrc.com`
+  * `www.23surajrc.com`
+* Use **DNS validation** and add CNAME records to Route 53
+* Wait until status is `ISSUED`
 
-- Choose **DNS validation**.
-- Add the provided **CNAME** records into your Route 53 hosted zone.
-- Wait until status = `Issued`.
+### 3. ALB Configuration
 
-### 3. ALB HTTPS Listener
+* ALB should have:
 
-- Create an HTTPS listener (port 443) on your Application Load Balancer.
-- Attach the issued ACM certificate.
-- Forward traffic to your ECS target group.
+  * Port 443 listener
+  * Attached ACM certificate
+  * Forward rule to ECS target group
 
-### 4. DNS Records in Route 53
+### 4. Route 53 Records
 
-Create:
+* Create A Records:
 
-- **A Record** for `23surajrc.com` → Alias → your ALB DNS name
-- **A Record** for `www.23surajrc.com` → Alias → your ALB DNS name
-
-Now both `https://23surajrc.com` and `https://www.23surajrc.com` should work securely.
+  * `23surajrc.com` → Alias → ALB DNS
+  * `www.23surajrc.com` → Alias → ALB DNS
 
 ---
 
 ## ✅ Summary
 
-| Feature                     | Done |
-| --------------------------- | ---- |
-| Flask App in Docker         | ✅   |
-| ECS (Fargate) Deployment    | ✅   |
-| Terraform Infra Provision   | ✅   |
-| GitHub Actions CI/CD        | ✅   |
-
-
----
-
-## \:memo: Notes
-
-- Make sure ports 80 and 443 are open in the ALB security group.
-- Use `terraform destroy` to tear down the infra when done.
+| Feature                  | Status |
+| ------------------------ | ------ |
+| Flask App in Docker      | ✅      |
+| ECS (Fargate) Deployment | ✅      |
+| Terraform Infra Setup    | ✅      |
+| GitHub Actions CI/CD     | ✅      |
+| Domain Mapping           | ✅      |
+| SSL with ACM             | ✅      |
 
 ---
 
-## \:handshake: Contributing
+## 📝 Notes
 
-Feel free to fork and improve this project. Pull requests are welcome!
+* Ensure port 80 and 443 are open on the ALB security group
+* You can use `terraform destroy` in `terraform/app-infra` to tear down resources
+* Remote backend support is optional; can be added by uncommenting backend files and reinitializing Terraform
+
+---
+
+## 🤝 Contributing
+
+Feel free to fork this repo and raise pull requests for improvements or suggestions.
+
+```
+
+---
+
+You can now **copy-paste this directly** into your `README.md` file — it's already formatted for GitHub and reflects your current project structure and behavior. Let me know if you'd like a version with badges or deployment status indicators!
+```
