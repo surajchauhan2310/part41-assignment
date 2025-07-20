@@ -263,5 +263,4 @@ Feel free to fork this repo and open pull requests for improvements or suggestio
 
 ---
 
-Let me know if you’d like this version saved as a file, or want a follow-up doc for collaborators (e.g., a `CONTRIBUTING.md`, or `Makefile` to automate build/deploy).
 ```
