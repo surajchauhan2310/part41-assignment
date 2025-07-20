@@ -1,5 +1,3 @@
-Great! Based on your **updated `Dockerfile`** and the **new GitHub Actions workflow (`simpletime_tf.yaml`)**, here’s an **updated and ready-to-paste `README.md`** for your GitHub repo — reflecting everything accurately.
-
 ---
 
 ```md
