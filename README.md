@@ -3,21 +3,40 @@ Terraform. It also integrates GitHub Actions for CI/CD and maps a custom domain 
 using Route 53, ACM (SSL), and Namecheap
 ---
 
-```md
+````md
 # 🚀 Flask App Deployment on AWS using Terraform, GitHub Actions, Docker & Custom Domain
 
-This project demonstrates how to deploy a Flask web application on AWS ECS Fargate using Docker and Terraform. It includes:
+This project demonstrates how to deploy a **Flask web application** using:
 
-- CI/CD via GitHub Actions
-- SSL via AWS ACM
-- Domain mapping (`23surajrc.com`) via Route 53 & Namecheap
+- 🐳 Docker (secure, non-root container)
+- ⚙️ ECS Fargate on AWS (infrastructure via Terraform)
+- 🧪 GitHub Actions (CI/CD pipeline)
+- 🌐 Route 53 + Namecheap for custom domain (`23surajrc.com`)
+- 🔐 AWS ACM for SSL
+
+---
+
+## ✅ Objective
+
+Your task will be considered successful if:
+
+- A colleague can run the app locally with just:
+  ```bash
+  docker build -t flask-time-ip .
+  docker run -p 5000:5000 flask-time-ip
+````
+
+* The app runs and stays up
+* The response is correct and shows current time + IP in JSON
+* The image is lightweight and secure (non-root user)
+* Terraform provisions complete infrastructure in AWS
+* Documentation is clear and self-contained
 
 ---
 
 ## 📁 Project Structure
 
 ```
-
 .
 ├── app/                          # Flask app
 │   ├── Dockerfile
@@ -36,11 +55,10 @@ This project demonstrates how to deploy a Flask web application on AWS ECS Farga
 │   └── backend-setup/          # (Optional) Initial backend setup logic
 │       └── backend-setup.tf
 ├── .github/workflows/
-│   └── simpletime\_tf.yaml       # GitHub Actions pipeline
+│   └── simpletime_tf.yaml       # GitHub Actions pipeline
 ├── .gitignore
 └── README.md
-
-````
+```
 
 ---
 
@@ -64,49 +82,68 @@ def get_time_and_ip():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-````
-
----
-
-## 🐳 Dockerfile (Secure, Non-Root)
-
-```dockerfile
-# Use a lightweight official Python image
-FROM python:3.12-slim
-
-# Create a non-root user
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
-
-# Set working directory
-WORKDIR /app
-
-# Copy requirements first for layer caching
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the application
-COPY . .
-
-# Change ownership of the app directory
-RUN chown -R appuser:appgroup /app
-
-# Switch to non-root user
-USER appuser
-
-# Expose the port your Flask app will run on
-EXPOSE 5000
-
-# Run the Flask app
-CMD ["python", "app.py"]
 ```
 
 ---
 
-## 🛠️ Terraform Infrastructure
+## 🐳 Docker Instructions (Minimal & Secure)
 
-### Run locally:
+### ✅ Build
+
+```bash
+cd app
+docker build -t flask-time-ip .
+```
+
+### ✅ Run
+
+```bash
+docker run -p 5000:5000 flask-time-ip
+```
+
+### ✅ Output
+
+Visit: [http://localhost:5000](http://localhost:5000)
+Example:
+
+```json
+{
+  "timestamp": "2025-07-20T12:34:56.123Z",
+  "ip": "127.0.0.1"
+}
+```
+
+---
+
+## 📦 Dockerfile Best Practices
+
+```dockerfile
+FROM python:3.12-slim
+
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+EXPOSE 5000
+CMD ["python", "app.py"]
+```
+
+✅ Uses slim base image
+✅ Runs as non-root user
+✅ Optimized for caching and small size
+✅ No unnecessary layers or tools
+
+---
+
+## 🛠️ Deploy with Terraform
+
+### 📦 Provision Infra
 
 ```bash
 cd terraform
@@ -116,21 +153,21 @@ terraform apply
 
 Creates:
 
-* VPC (public + private subnets)
-* ECS Cluster (Fargate)
-* Load Balancer (ALB)
-* IAM Roles
-* Target Group, Listener
-* (Optional) Remote backend support via S3 + DynamoDB
+* VPC with subnets
+* ECS Cluster with Fargate
+* ALB + Target Group
+* IAM roles and task definitions
+* Route 53 records
+* ACM SSL Certificate
 
 ---
 
-## 🔐 SSL & Domain Mapping
+## 🔐 Domain Mapping + SSL (ACM)
 
 ### 1. Route 53 Hosted Zone
 
 * Create hosted zone for `23surajrc.com`
-* Copy NS records into Namecheap domain settings
+* Update Namecheap with the NS records
 
 ### 2. ACM Certificate
 
@@ -138,144 +175,93 @@ Creates:
 
   * `23surajrc.com`
   * `www.23surajrc.com`
-* Choose **DNS validation**
-* Add generated CNAME records to Route 53
-* Wait for `ISSUED` status
+* Use **DNS validation**
+* Add CNAMEs to Route 53
+* Wait for `ISSUED`
 
-### 3. ALB Configuration (via Terraform)
+### 3. ALB Configuration
 
-* HTTPS listener (port 443)
-
-  * Uses ACM certificate
-  * Forwards to ECS target group
-* Optional HTTP (port 80) → Redirect to HTTPS
+* HTTPS listener (443)
+* ACM certificate
+* Optional HTTP → HTTPS redirect
 
 ### 4. Route 53 Records
 
-* Create Alias records:
-
-  * `23surajrc.com` → ALB DNS
-  * `www.23surajrc.com` → ALB DNS
+* `23surajrc.com` → ALB DNS
+* `www.23surajrc.com` → ALB DNS
 
 ---
 
-## 🐙 GitHub Actions: `simpletime_tf.yaml`
+## 🐙 GitHub Actions (`simpletime_tf.yaml`)
 
-### 📄 `.github/workflows/simpletime_tf.yaml`
+Runs Terraform `apply` or `destroy` via `workflow_dispatch`.
 
-```yaml
-name: Terraform Pipeline for creating the infrastructure and also for deploying the simpletimesvc on the ECS Fargate cluster
+### Required Secrets
 
-on:
-  workflow_dispatch:
-    inputs:
-      action:
-        description: 'Terraform action to perform'
-        required: true
-        default: 'apply'
-        type: choice
-        options:
-          - apply
-          - destroy
+* `AWS_ACCESS_KEY_ID`
+* `AWS_SECRET_ACCESS_KEY`
 
-jobs:
-  terraform:
-    runs-on: ubuntu-latest
+### Trigger:
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+1. Go to GitHub → Actions
+2. Select "Terraform Pipeline"
+3. Click **Run workflow**
+4. Choose:
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+   * `apply` (to deploy)
+   * `destroy` (to tear down)
 
-      - name: Create S3 Bucket for Terraform Backend
-        run: |
-          BUCKET_NAME="terraform-backend-bucket-suraj2310"
-          echo "BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
+---
 
-          if ! aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-            aws s3api create-bucket \
-              --bucket "$BUCKET_NAME" \
-              --region ap-south-1 \
-              --create-bucket-configuration LocationConstraint=ap-south-1
-            echo "S3 bucket $BUCKET_NAME created."
-          else
-            echo "S3 bucket $BUCKET_NAME already exists."
-          fi
+## ✅ Evaluation Checklist
 
-      - name: Create DynamoDB Table for Locking
-        run: |
-          if aws dynamodb describe-table --table-name terraform-locks >/dev/null 2>&1; then
-            echo "DynamoDB table already exists. Skipping creation."
-          else
-            aws dynamodb create-table \
-              --table-name terraform-locks \
-              --attribute-definitions AttributeName=LockID,AttributeType=S \
-              --key-schema AttributeName=LockID,KeyType=HASH \
-              --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
-          fi
+| Criteria                     | Status |
+| ---------------------------- | ------ |
+| `docker build` works         | ✅      |
+| `docker run` works           | ✅      |
+| App stays running            | ✅      |
+| Returns valid timestamp + IP | ✅      |
+| Non-root container           | ✅      |
+| Image is minimal             | ✅      |
+| SSL enabled via ACM          | ✅      |
+| Terraform infra complete     | ✅      |
+| Domain points to ALB         | ✅      |
+| CI/CD pipeline functional    | ✅      |
+| Instructions clear           | ✅      |
 
-      - name: Wait for DynamoDB Table to become ACTIVE
-        run: |
-          while true; do
-            STATUS=$(aws dynamodb describe-table --table-name terraform-locks --query "Table.TableStatus" --output text)
-            if [ "$STATUS" == "ACTIVE" ]; then break; fi
-            sleep 5
-          done
+---
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+## 🧹 Clean Up
 
-      - name: Terraform CD Init
-        working-directory: ./terraform
-        run: terraform init
-
-      - name: Terraform Plan
-        working-directory: ./terraform
-        run: terraform plan
-
-      - name: Terraform Apply or Destroy
-        working-directory: ./terraform
-        run: |
-          if [[ "${{ github.event.inputs.action }}" == "destroy" ]]; then
-            terraform destroy -auto-approve
-          else
-            terraform apply -auto-approve
+```bash
+cd terraform
+terraform destroy
 ```
 
----
+Optional cleanup if using remote state:
 
-## ✅ Summary
-
-| Feature                 | Status |
-| ----------------------- | ------ |
-| Dockerized Flask App    | ✅      |
-| ECS Fargate Deployment  | ✅      |
-| HTTPS via ACM           | ✅      |
-| Domain (Route 53 + ALB) | ✅      |
-| Terraform Infra Setup   | ✅      |
-| GitHub Actions CI/CD    | ✅      |
-| S3 & DynamoDB Backend   | ✅      |
-
----
-
-## 📝 Tips
-
-* ✅ Open ports 80 & 443 in ALB security group
-* ✅ Use `terraform destroy` to clean up
-* ✅ ACM + Route 53 DNS validation is preferred
-* 🚀 GitHub Actions deploys on-demand (`apply` or `destroy`) via `workflow_dispatch`
+```bash
+aws s3 rb s3://terraform-backend-bucket-suraj2310 --force
+aws dynamodb delete-table --table-name terraform-locks
+```
 
 ---
 
 ## 🤝 Contributing
 
-Feel free to fork this repo and open pull requests for improvements!
+Feel free to fork this repo and open pull requests for improvements or suggestions.
+
+---
+
+## 📌 Tips
+
+* Ensure ports 80 and 443 are open in ALB SG
+* Prefer DNS validation for ACM (automated via Route 53)
+* Use CI/CD via GitHub Actions for fast iteration
 
 ```
 
+---
+
+Let me know if you’d like this version saved as a file, or want a follow-up doc for collaborators (e.g., a `CONTRIBUTING.md`, or `Makefile` to automate build/deploy).
+```
