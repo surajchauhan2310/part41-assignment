@@ -143,7 +143,7 @@ CMD ["python", "app.py"]
 
 ## 🛠️ Deploy with Terraform
 
-### 📦 Provision Infra
+### 📦 To Provision the Infrastructure
 
 ```bash
 cd terraform
@@ -157,8 +157,6 @@ Creates:
 * ECS Cluster with Fargate
 * ALB + Target Group
 * IAM roles and task definitions
-* Route 53 records
-* ACM SSL Certificate
 
 ---
 
@@ -261,6 +259,4 @@ Feel free to fork this repo and open pull requests for improvements or suggestio
 
 ```
 
----
 
-```
