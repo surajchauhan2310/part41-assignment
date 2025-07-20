@@ -1,3 +1,6 @@
+This project demonstrates how to deploy a Flask web application using Docker, ECS (Fargate), and
+Terraform. It also integrates GitHub Actions for CI/CD and maps a custom domain (23surajrc.com)
+using Route 53, ACM (SSL), and Namecheap
 ---
 
 ```md
