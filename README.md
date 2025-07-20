@@ -257,6 +257,5 @@ Feel free to fork this repo and open pull requests for improvements or suggestio
 * Prefer DNS validation for ACM (automated via Route 53)
 * Use CI/CD via GitHub Actions for fast iteration
 
-```
 
 
